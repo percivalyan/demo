@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Kehadiran</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Manajemen Kehadiran</h1>
+
+        <h2 class="mb-4">Tambah Kehadiran</h2>
+        <form id="form-tambah">
+            <div class="form-group">
+                <label for="siswaId">Siswa:</label>
+                <select class="form-control" id="siswaId" name="siswaId" required></select>
+            </div>
+            <div class="form-group">
+                <label for="tanggal">Tanggal:</label>
+                <input type="date" class="form-control" id="tanggal" name="tanggal" required>
+            </div>
+            <div class="form-group">
+                <label for="status">Status Kehadiran:</label>
+                <select class="form-control" id="status" name="status" required>
+                    <option value="Hadir">Hadir</option>
+                    <option value="Tidak Hadir">Tidak Hadir</option>
+                    <option value="Izin">Izin</option>
+                    <option value="Sakit">Sakit</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Tambah Kehadiran</button>
+        </form>
+
+        <h2 class="mt-5 mb-4 hidden" id="edit-title">Edit Kehadiran</h2>
+        <form id="form-edit" class="hidden">
+            <input type="hidden" id="editId" name="editId">
+            <div class="form-group">
+                <label for="editSiswaId">Siswa:</label>
+                <select class="form-control" id="editSiswaId" name="siswaId" required></select>
+            </div>
+            <div class="form-group">
+                <label for="editTanggal">Tanggal:</label>
+                <input type="date" class="form-control" id="editTanggal" name="tanggal" required>
+            </div>
+            <div class="form-group">
+                <label for="editStatus">Status Kehadiran:</label>
+                <select class="form-control" id="editStatus" name="status" required>
+                    <option value="Hadir">Hadir</option>
+                    <option value="Tidak Hadir">Tidak Hadir</option>
+                    <option value="Izin">Izin</option>
+                    <option value="Sakit">Sakit</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Kehadiran</button>
+        </form>
+
+        <h2 class="mt-5 mb-4">Daftar Kehadiran</h2>
+        <table class="table table-bordered" id="tabel-kehadiran">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nama Siswa</th>
+                    <th>Tanggal</th>
+                    <th>Status Kehadiran</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data akan dimuat di sini -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const apiUrl = "http://localhost:8080/api/kehadiran";
+
+            function loadKehadiran() {
+                fetch(apiUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        const tabelKehadiran = document.getElementById("tabel-kehadiran").getElementsByTagName("tbody")[0];
+                        tabelKehadiran.innerHTML = "";
+                        data.forEach(kehadiran => {
+                            const row = tabelKehadiran.insertRow();
+                            row.insertCell(0).textContent = kehadiran.id;
+                            row.insertCell(1).textContent = `${kehadiran.siswa.id} - ${kehadiran.siswa.nama_lengkap}`;
+                            row.insertCell(2).textContent = kehadiran.tanggal;
+                            row.insertCell(3).textContent = kehadiran.status;
+                            const aksiCell = row.insertCell(4);
+                            const editButton = document.createElement("button");
+                            editButton.className = "btn btn-warning btn-sm mr-2";
+                            editButton.textContent = "Edit";
+                            editButton.onclick = () => editKehadiran(kehadiran);
+                            aksiCell.appendChild(editButton);
+                            const deleteButton = document.createElement("button");
+                            deleteButton.className = "btn btn-danger btn-sm";
+                            deleteButton.textContent = "Delete";
+                            deleteButton.onclick = () => deleteKehadiran(kehadiran.id);
+                            aksiCell.appendChild(deleteButton);
+                        });
+                    })
+                    .catch(error => console.error("Error fetching data:", error));
+            }
+
+            loadKehadiran();
+
+            async function fetchSiswa() {
+                const response = await fetch('http://localhost:8080/api/siswa');
+                const data = await response.json();
+                return data;
+            }
+
+            async function renderSiswaOptions(selectId) {
+                const siswaList = await fetchSiswa();
+                const select = document.getElementById(selectId);
+                select.innerHTML = '';
+                siswaList.forEach(siswa => {
+                    const option = document.createElement('option');
+                    option.value = siswa.id;
+                    option.textContent = `${siswa.id} - ${siswa.nama_lengkap}`;
+                    select.appendChild(option);
+                });
+            }
+
+            renderSiswaOptions('siswaId');
+            renderSiswaOptions('editSiswaId');
+
+            document.getElementById("form-tambah").addEventListener("submit", addKehadiran);
+            document.getElementById("form-edit").addEventListener("submit", updateKehadiran);
+
+            function addKehadiran(event) {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+                const data = {
+                    siswa: {
+                        id: formData.get("siswaId")
+                    },
+                    tanggal: formData.get("tanggal"),
+                    status: formData.get("status")
+                };
+
+                fetch(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById("form-tambah").reset();
+                    loadKehadiran();
+                })
+                .catch(error => console.error("Error adding kehadiran:", error));
+            }
+
+            function updateKehadiran(event) {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+                const id = document.getElementById("editId").value;
+                const data = {
+                    siswa: {
+                        id: formData.get("siswaId")
+                    },
+                    tanggal: formData.get("tanggal"),
+                    status: formData.get("status")
+                };
+
+                fetch(`${apiUrl}/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById("form-edit").reset();
+                    document.getElementById("form-edit").classList.add("hidden");
+                    document.getElementById("edit-title").classList.add("hidden");
+                    loadKehadiran();
+                })
+                .catch(error => console.error("Error updating kehadiran:", error));
+            }
+
+            function editKehadiran(kehadiran) {
+                document.getElementById("editId").value = kehadiran.id;
+                document.getElementById("editSiswaId").value = kehadiran.siswa.id;
+                document.getElementById("editTanggal").value = kehadiran.tanggal;
+                document.getElementById("editStatus").value = kehadiran.status;
+
+                document.getElementById("form-edit").classList.remove("hidden");
+                document.getElementById("edit-title").classList.remove("hidden");
+            }
+
+            function deleteKehadiran(id) {
+                fetch(`${apiUrl}/${id}`, {
+                    method: "DELETE",
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    loadKehadiran();
+                })
+                .catch(error => console.error("Error deleting kehadiran:", error));
+            }
+        });
+    </script>
+</body>
+</html>

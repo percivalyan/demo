@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tahun Ajaran Management</title>
+</head>
+<body>
+    <h1>Manajemen Tahun Ajaran</h1>
+    
+    <h2>Tambah/Update Tahun Ajaran</h2>
+    <form id="addUpdateForm">
+        <input type="hidden" id="id" name="id">
+        <label for="tahun">Tahun:</label>
+        <input type="text" id="tahun" name="tahun" required><br>
+        <label for="periode">Periode:</label>
+        <input type="number" id="periode" name="periode" required><br>
+        <label for="tglMulai">Tanggal Mulai:</label>
+        <input type="date" id="tglMulai" name="tglMulai" required><br>
+        <label for="tglAkhir">Tanggal Akhir:</label>
+        <input type="date" id="tglAkhir" name="tglAkhir" required><br>
+        <label for="kurikulum">Kurikulum:</label>
+        <input type="text" id="kurikulum" name="kurikulum" required><br>
+        <button type="submit">Simpan</button>
+    </form>
+    
+    <h2>Daftar Tahun Ajaran</h2>
+    <button onclick="getAllTahunAjaran()">Refresh</button>
+    <ul id="tahunAjaranList"></ul>
+
+    <script>
+        const apiUrl = 'http://localhost:8080/api/tahunajaran';
+
+        // Function to get all TahunAjaran
+        function getAllTahunAjaran() {
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const list = document.getElementById('tahunAjaranList');
+                    list.innerHTML = '';
+                    data.forEach(item => {
+                        const listItem = document.createElement('li');
+                        listItem.innerHTML = `
+                            ID: ${item.id} <br>
+                            Tahun: ${item.tahun} <br>
+                            Periode: ${item.periode} <br>
+                            Tanggal Mulai: ${item.tglMulai} <br>
+                            Tanggal Akhir: ${item.tglAkhir} <br>
+                            Kurikulum: ${item.kurikulum} <br>
+                            <button onclick="editTahunAjaran(${item.id})">Edit</button>
+                            <button onclick="deleteTahunAjaran(${item.id})">Hapus</button>
+                            <hr>
+                        `;
+                        list.appendChild(listItem);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Function to add or update TahunAjaran
+        document.getElementById('addUpdateForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            const id = data.id;
+
+            if (id) {
+                // Update existing TahunAjaran
+                fetch(`${apiUrl}/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Updated successfully:', data);
+                    getAllTahunAjaran();
+                })
+                .catch(error => console.error('Error:', error));
+            } else {
+                // Add new TahunAjaran
+                fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Added successfully:', data);
+                    getAllTahunAjaran();
+                })
+                .catch(error => console.error('Error:', error));
+            }
+            this.reset();
+        });
+
+        // Function to edit a TahunAjaran
+        function editTahunAjaran(id) {
+            fetch(`${apiUrl}/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('id').value = data.id;
+                    document.getElementById('tahun').value = data.tahun;
+                    document.getElementById('periode').value = data.periode;
+                    document.getElementById('tglMulai').value = data.tglMulai;
+                    document.getElementById('tglAkhir').value = data.tglAkhir;
+                    document.getElementById('kurikulum').value = data.kurikulum;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Function to delete a TahunAjaran
+        function deleteTahunAjaran(id) {
+            fetch(`${apiUrl}/${id}`, {
+                method: 'DELETE',
+            })
+            .then(() => {
+                console.log('Deleted successfully');
+                getAllTahunAjaran();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Initial call to populate the list
+        getAllTahunAjaran();
+    </script>
+</body>
+</html>

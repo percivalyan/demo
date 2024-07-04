@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Jadwal Pelajaran</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Manajemen Jadwal Pelajaran</h1>
+
+        <h2 class="mb-4">Tambah Jadwal Pelajaran</h2>
+        <form id="form-tambah">
+            <div class="form-group">
+                <label for="siswa">Siswa:</label>
+                <select class="form-control" id="siswa" name="siswa" required></select>
+            </div>
+            <div class="form-group">
+                <label for="guru">Guru:</label>
+                <input type="text" class="form-control" id="guru" name="guru" required>
+            </div>
+            <div class="form-group">
+                <label for="kelas">Kelas:</label>
+                <input type="text" class="form-control" id="kelas" name="kelas" required>
+            </div>
+            <div class="form-group">
+                <label for="hari">Hari:</label>
+                <select class="form-control" id="hari" name="hari" required>
+                    <option value="SENIN">Senin</option>
+                    <option value="SELASA">Selasa</option>
+                    <option value="RABU">Rabu</option>
+                    <option value="KAMIS">Kamis</option>
+                    <option value="JUMAT">Jumat</option>
+                    <option value="SABTU">Sabtu</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="jamMulai">Jam Mulai:</label>
+                <input type="number" class="form-control" id="jamMulai" name="jamMulai" required>
+            </div>
+            <div class="form-group">
+                <label for="jamSelesai">Jam Selesai:</label>
+                <input type="number" class="form-control" id="jamSelesai" name="jamSelesai" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Tambah Jadwal</button>
+        </form>
+
+        <h2 class="mt-5 mb-4">Daftar Jadwal Pelajaran</h2>
+        <table class="table table-bordered" id="tabel-jadwal">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Siswa</th>
+                    <th>Guru</th>
+                    <th>Kelas</th>
+                    <th>Hari</th>
+                    <th>Jam Mulai</th>
+                    <th>Jam Selesai</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data akan dimuat di sini -->
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const apiUrl = "http://localhost:8080/api/jadwal-pelajaran";
+
+            function loadJadwal() {
+                fetch(apiUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        const tabelJadwal = document.getElementById("tabel-jadwal").getElementsByTagName("tbody")[0];
+                        tabelJadwal.innerHTML = "";
+                        data.forEach(jadwal => {
+                            const row = tabelJadwal.insertRow();
+                            row.insertCell(0).textContent = jadwal.id;
+                            row.insertCell(1).textContent = jadwal.siswa.map(s => s.nama_lengkap).join(', ');
+                            row.insertCell(2).textContent = jadwal.idGuru;
+                            row.insertCell(3).textContent = jadwal.idKelas;
+                            row.insertCell(4).textContent = jadwal.hari;
+                            row.insertCell(5).textContent = jadwal.jamMulai;
+                            row.insertCell(6).textContent = jadwal.jamSelesai;
+                            
+                            // Aksi Edit
+                            const editButton = document.createElement("button");
+                            editButton.className = "btn btn-primary btn-sm mr-2";
+                            editButton.textContent = "Edit";
+                            editButton.onclick = () => editJadwal(jadwal.id);
+                            row.insertCell(7).appendChild(editButton);
+                            
+                            // Aksi Delete
+                            const deleteButton = document.createElement("button");
+                            deleteButton.className = "btn btn-danger btn-sm";
+                            deleteButton.textContent = "Delete";
+                            deleteButton.onclick = () => deleteJadwal(jadwal.id);
+                            row.insertCell(7).appendChild(deleteButton);
+                        });
+                    })
+                    .catch(error => console.error("Error fetching data:", error));
+            }
+
+            loadJadwal();
+
+            async function fetchSiswa() {
+                const response = await fetch('http://localhost:8080/api/siswa');
+                const data = await response.json();
+                return data;
+            }
+
+            async function renderSiswaOptions(selectId) {
+                const siswaList = await fetchSiswa();
+                const select = document.getElementById(selectId);
+                select.innerHTML = '';
+                siswaList.forEach(siswa => {
+                    const option = document.createElement('option');
+                    option.value = siswa.id;
+                    option.textContent = siswa.nama_lengkap;
+                    select.appendChild(option);
+                });
+            }
+
+            renderSiswaOptions('siswa');
+
+            document.getElementById("form-tambah").addEventListener("submit", addJadwal);
+
+            function addJadwal(event) {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+                const data = {
+                    siswa: [{ id: formData.get("siswa") }],
+                    idGuru: formData.get("guru"),
+                    idKelas: formData.get("kelas"),
+                    hari: formData.get("hari"),
+                    jamMulai: formData.get("jamMulai"),
+                    jamSelesai: formData.get("jamSelesai")
+                };
+
+                fetch(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById("form-tambah").reset();
+                    loadJadwal();
+                })
+                .catch(error => console.error("Error adding jadwal:", error));
+            }
+
+            function deleteJadwal(id) {
+                fetch(`${apiUrl}/${id}`, {
+                    method: "DELETE",
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    loadJadwal();
+                })
+                .catch(error => console.error("Error deleting jadwal:", error));
+            }
+
+            function editJadwal(id) {
+    fetch(`${apiUrl}/${id}`)
+        .then(response => response.json())
+        .then(jadwal => {
+            // Menampilkan data jadwal pada form edit
+            document.getElementById("siswa").value = jadwal.siswa[0].id;
+            document.getElementById("guru").value = jadwal.idGuru;
+            document.getElementById("kelas").value = jadwal.idKelas;
+            document.getElementById("hari").value = jadwal.hari;
+            document.getElementById("jamMulai").value = jadwal.jamMulai;
+            document.getElementById("jamSelesai").value = jadwal.jamSelesai;
+
+            // Mengubah teks tombol tambah menjadi simpan
+            const submitButton = document.querySelector("#form-tambah button[type='submit']");
+            submitButton.textContent = "Simpan Perubahan";
+
+            // Menambahkan event listener untuk form edit
+            document.getElementById("form-tambah").onsubmit = (event) => updateJadwal(event, id);
+        })
+        .catch(error => console.error("Error fetching jadwal:", error));
+}
+
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Siswa</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Manajemen Siswa</h1>
+
+        <h2 class="mb-4">Tambah Siswa</h2>
+        <form id="form-tambah">
+            <div class="form-group">
+                <label for="idTA">Tahun Ajaran:</label>
+                <select class="form-control" id="idTA" name="idTA" required></select>
+            </div>
+            <div class="form-group">
+                <label for="nisn">NISN:</label>
+                <input type="text" class="form-control" id="nisn" name="nisn" required>
+            </div>
+            <div class="form-group">
+                <label for="namaLengkap">Nama Lengkap:</label>
+                <input type="text" class="form-control" id="namaLengkap" name="namaLengkap" required>
+            </div>
+            <div class="form-group">
+                <label for="tanggalLahir">Tanggal Lahir:</label>
+                <input type="date" class="form-control" id="tanggalLahir" name="tanggalLahir" required>
+            </div>
+            <div class="form-group">
+                <label for="alamat">Alamat:</label>
+                <input type="text" class="form-control" id="alamat" name="alamat" required>
+            </div>
+            <div class="form-group">
+                <label for="namaOrtu">Nama Orang Tua:</label>
+                <input type="text" class="form-control" id="namaOrtu" name="namaOrtu" required>
+            </div>
+            <div class="form-group">
+                <label for="telp">Telepon:</label>
+                <input type="text" class="form-control" id="telp" name="telp" required>
+            </div>
+            <div class="form-group">
+                <label for="foto">Foto:</label>
+                <input type="file" class="form-control" id="foto" name="foto" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label for="status">Status:</label>
+                <select class="form-control" id="status" name="status" required>
+                    <option value="true">Aktif</option>
+                    <option value="false">Tidak Aktif</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Tambah Siswa</button>
+        </form>
+
+        <h2 class="mt-5 mb-4 hidden" id="edit-title">Edit Siswa</h2>
+        <form id="form-edit" class="hidden">
+            <input type="hidden" id="editId" name="editId">
+            <div class="form-group">
+                <label for="editIdTA">Tahun Ajaran:</label>
+                <select class="form-control" id="editIdTA" name="idTA" required></select>
+            </div>
+            <div class="form-group">
+                <label for="editNisn">NISN:</label>
+                <input type="text" class="form-control" id="editNisn" name="nisn" required>
+            </div>
+            <div class="form-group">
+                <label for="editNamaLengkap">Nama Lengkap:</label>
+                <input type="text" class="form-control" id="editNamaLengkap" name="namaLengkap" required>
+            </div>
+            <div class="form-group">
+                <label for="editTanggalLahir">Tanggal Lahir:</label>
+                <input type="date" class="form-control" id="editTanggalLahir" name="tanggalLahir" required>
+            </div>
+            <div class="form-group">
+                <label for="editAlamat">Alamat:</label>
+                <input type="text" class="form-control" id="editAlamat" name="alamat" required>
+            </div>
+            <div class="form-group">
+                <label for="editNamaOrtu">Nama Orang Tua:</label>
+                <input type="text" class="form-control" id="editNamaOrtu" name="namaOrtu" required>
+            </div>
+            <div class="form-group">
+                <label for="editTelp">Telepon:</label>
+                <input type="text" class="form-control" id="editTelp" name="telp" required>
+            </div>
+            <div class="form-group">
+                <label for="editFoto">Foto:</label>
+                <input type="file" class="form-control" id="editFoto" name="foto" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label for="editStatus">Status:</label>
+                <select class="form-control" id="editStatus" name="status" required>
+                    <option value="true">Aktif</option>
+                    <option value="false">Tidak Aktif</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Siswa</button>
+        </form>
+
+        <h2 class="mt-5 mb-4">Daftar Siswa</h2>
+        <table class="table table-bordered" id="tabel-siswa">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tahun Ajaran</th>
+                    <th>NISN</th>
+                    <th>Nama Lengkap</th>
+                    <th>Tanggal Lahir</th>
+                    <th>Alamat</th>
+                    <th>Nama Orang Tua</th>
+                    <th>Telepon</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data akan dimuat di sini -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const apiUrl = "http://localhost:8080/api/siswa";
+            
+
+            function loadSiswa() {
+                fetch(apiUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        const tabelSiswa = document.getElementById("tabel-siswa").getElementsByTagName("tbody")[0];
+                        tabelSiswa.innerHTML = "";
+                        data.forEach(siswa => {
+                            const row = tabelSiswa.insertRow();
+                            row.insertCell(0).textContent = siswa.id;
+                            row.insertCell(1).textContent = `${siswa.tahunAjaran.id} - ${siswa.tahunAjaran.kurikulum}`;
+                            row.insertCell(2).textContent = siswa.nisn;
+                            row.insertCell(3).textContent = siswa.nama_lengkap;
+                            row.insertCell(4).textContent = siswa.tanggal_lahir;
+                            row.insertCell(5).textContent = siswa.alamat;
+                            row.insertCell(6).textContent = siswa.nama_ortu;
+                            row.insertCell(7).textContent = siswa.telp;
+                            row.insertCell(8).textContent = siswa.status ? "Aktif" : "Tidak Aktif";
+                            const aksiCell = row.insertCell(9);
+                            const editButton = document.createElement("button");
+                            editButton.className = "btn btn-warning btn-sm mr-2";
+                            editButton.textContent = "Edit";
+                            editButton.onclick = () => editSiswa(siswa);
+                            aksiCell.appendChild(editButton);
+                            const deleteButton = document.createElement("button");
+                            deleteButton.className = "btn btn-danger btn-sm";
+                            deleteButton.textContent = "Delete";
+                            deleteButton.onclick = () => deleteSiswa(siswa.id);
+                            aksiCell.appendChild(deleteButton);
+                        });
+                    })
+                    .catch(error => console.error("Error fetching data:", error));
+            }
+
+            loadSiswa();
+
+            async function fetchTahunAjaran() {
+                const response = await fetch('http://localhost:8080/api/tahunajaran');
+                const data = await response.json();
+                return data;
+            }
+
+            async function renderTahunAjaranOptions(selectId) {
+                const tahunAjaranList = await fetchTahunAjaran();
+                const select = document.getElementById(selectId);
+                select.innerHTML = '';
+                tahunAjaranList.forEach(tahunAjaran => {
+                    const option = document.createElement('option');
+                    option.value = tahunAjaran.id;
+                    option.textContent = `${tahunAjaran.id} - ${tahunAjaran.periode}`;
+                    select.appendChild(option);
+                });
+            }
+
+            renderTahunAjaranOptions('idTA');
+            renderTahunAjaranOptions('editIdTA');
+
+            document.getElementById("form-tambah").addEventListener("submit", addSiswa);
+            document.getElementById("form-edit").addEventListener("submit", updateSiswa);
+
+            function addSiswa(event) {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+                
+                const data = {
+                    tahunAjaran: {
+                        id: formData.get("idTA")
+                    },
+                    nisn: formData.get("nisn"),
+                    nama_lengkap: formData.get("namaLengkap"),
+                    tanggal_lahir: formData.get("tanggalLahir"),
+                    alamat: formData.get("alamat"),
+                    nama_ortu: formData.get("namaOrtu"),
+                    telp: formData.get("telp"),
+                    status: formData.get("status") === "true"
+                };
+
+                const fotoFile = formData.get("foto");
+                
+                if (fotoFile && fotoFile.size > 0) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const fotoData = reader.result.split(",")[1]; // Get base64 part of the string
+                        data.foto = fotoData;
+                        data.fotoName = fotoFile.name;
+
+                        // Send the JSON data including the image
+                        sendSiswaData(data);
+                    };
+                    reader.readAsDataURL(fotoFile); // Read the file as base64
+                } else {
+                    sendSiswaData(data);
+                }
+            }
+
+            function sendSiswaData(siswaData) {
+                console.log("Sending data:", siswaData);
+
+                fetch(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(siswaData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Data received:", data);
+                    document.getElementById("form-tambah").reset();
+                    loadSiswa();
+                })
+                .catch(error => console.error("Error adding siswa:", error));
+            }
+
+            function updateSiswa(event) {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+                const id = document.getElementById("editId").value;
+
+                const data = {
+                    tahunAjaran: {
+                        id: formData.get("idTA")
+                    },
+                    nisn: formData.get("nisn"),
+                    nama_lengkap: formData.get("namaLengkap"),
+                    tanggal_lahir: formData.get("tanggalLahir"),
+                    alamat: formData.get("alamat"),
+                    nama_ortu: formData.get("namaOrtu"),
+                    telp: formData.get("telp"),
+                    status: formData.get("status") === "true"
+                };
+
+                const fotoFile = formData.get("foto");
+
+                if (fotoFile && fotoFile.size > 0) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const fotoData = reader.result.split(",")[1]; // Get base64 part of the string
+                        data.foto = fotoData;
+                        data.fotoName = fotoFile.name;
+
+                        // Send the JSON data including the image
+                        sendUpdateSiswaData(id, data);
+                    };
+                    reader.readAsDataURL(fotoFile); // Read the file as base64
+                } else {
+                    sendUpdateSiswaData(id, data);
+                }
+            }
+
+            function sendUpdateSiswaData(id, siswaData) {
+                console.log("Updating data:", siswaData);
+
+                fetch(`${apiUrl}/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(siswaData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Data received:", data);
+                    document.getElementById("form-edit").reset();
+                    document.getElementById("form-edit").classList.add("hidden");
+                    document.getElementById("edit-title").classList.add("hidden");
+                    loadSiswa();
+                })
+                .catch(error => console.error("Error updating siswa:", error));
+            }
+
+            function editSiswa(siswa) {
+                document.getElementById("editId").value = siswa.id;
+                document.getElementById("editIdTA").value = siswa.tahunAjaran.id;
+                document.getElementById("editNisn").value = siswa.nisn;
+                document.getElementById("editNamaLengkap").value = siswa.nama_lengkap;
+                document.getElementById("editTanggalLahir").value = siswa.tanggal_lahir;
+                document.getElementById("editAlamat").value = siswa.alamat;
+                document.getElementById("editNamaOrtu").value = siswa.nama_ortu;
+                document.getElementById("editTelp").value = siswa.telp;
+                document.getElementById("editStatus").value = siswa.status;
+
+                document.getElementById("form-edit").classList.remove("hidden");
+                document.getElementById("edit-title").classList.remove("hidden");
+            }
+
+            function deleteSiswa(id) {
+                fetch(`${apiUrl}/${id}`, {
+                    method: "DELETE",
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    loadSiswa();
+                })
+                .catch(error => console.error("Error deleting siswa:", error));
+            }
+        });
+    </script>
+</body>
+</html>
